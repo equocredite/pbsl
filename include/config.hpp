@@ -1,10 +1,10 @@
-//
-// Created by equocredite on 05/01/23.
-//
-
 #ifndef PBSL_CONFIG_H
 #define PBSL_CONFIG_H
 
-#define DEBUG
+namespace pbsl::config {
+
+inline constexpr bool DEBUG = true;
+
+}
 
 #endif //PBSL_CONFIG_H
