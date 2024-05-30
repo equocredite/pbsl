@@ -34,13 +34,13 @@ struct Node {
             , new_prev(height, nullptr)
             , new_next(height, nullptr)
             {
-        util::Assert(height > 0);
+        assert(height > 0);
     }
 
     auto Height() const -> size_t { return next.size(); }
 
     auto Next(size_t level) const -> Node* {
-        util::Assert(level < Height());
+        assert(level < Height());
         return next[level];
     }
 
@@ -66,7 +66,7 @@ struct Node {
     // TODO: for each layer in skip list, store a flag indicating whether the layer has been changed,
     //  and if not, use cached distance
 //    size_t CalcDistanceToNearestNodeWithParent() {
-//        util::Assert(right_link_ != nullptr);
+//        assert(right_link_ != nullptr);
 //        size_t dist = 1;
 //        auto node = right_link_;
 //        while (!node->has_parent_) {

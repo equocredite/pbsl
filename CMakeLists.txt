@@ -9,8 +9,7 @@ include_directories(include include/pbsl include/common)
 find_package(Threads REQUIRED)
 find_package(Parlay CONFIG REQUIRED)
 
-add_executable(pbsl src/main.cpp
-        include/jj/jj.hpp)
+add_executable(pbsl src/main.cpp)
 
 target_link_libraries(pbsl Threads::Threads)
 target_link_libraries(pbsl Parlay::parlay)

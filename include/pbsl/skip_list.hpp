@@ -19,12 +19,12 @@ namespace pbsl {
 
 class SkipList {
   public:
-    using Key = config::Key;
+    using Key = size_t;
     template<typename T> using Seq = util::types::Seq<T>;
     using NodeAllocator = parlay::type_allocator<Node>;
 
     static auto FromOrderedKeys(Seq<Key> const& keys) -> SkipList {
-        util::Assert(!keys.empty());
+        assert(!keys.empty());
         auto nodes = CreateNodes(keys, true).first;
         return {nodes.front(), nodes.back()};
     }
@@ -43,9 +43,9 @@ class SkipList {
     }
 
     auto InsertOrdered(Seq<Key> const& keys) -> void {
-        util::Assert(!keys.empty());
+        assert(!keys.empty());
         auto [nodes, height] = CreateNodes(keys, false);
-        std::cout << "other height = " << height << std::endl;
+        //std::cout << "other height = " << height << std::endl;
         Merge(nodes, height);
     }
 
@@ -88,7 +88,7 @@ class SkipList {
     SkipList(Node* left_sentinel, Node* right_sentinel)
         : left_sentinel_(left_sentinel)
         , right_sentinel_(right_sentinel) {
-        util::Assert(left_sentinel != nullptr && right_sentinel != nullptr);
+        assert(left_sentinel != nullptr && right_sentinel != nullptr);
     }
 
     static auto CreateNode(Key key) -> Node* { return NodeAllocator::create(key, GenerateHeight()); }
@@ -127,8 +127,8 @@ class SkipList {
     }
 
     auto CountDescendantsAtLevelImpl(Node* node, size_t level, size_t target_level) -> size_t {
-        util::Assert(node != nullptr);
-        util::Assert(level >= target_level);
+        assert(node != nullptr);
+        assert(level >= target_level);
         Node* right = node->Next(level);
         bool go_right = right != nullptr && right->Height() <= level + 1;
         bool go_down = level > target_level;
@@ -153,8 +153,8 @@ class SkipList {
     }
 
     auto CopyLayerImpl(Node* node, size_t level, size_t offset, size_t target_level, Seq<Node*>& target_layer) const -> void {
-        util::Assert(node != nullptr);
-        util::Assert(level >= target_level);
+        assert(node != nullptr);
+        assert(level >= target_level);
         // if v->down_link_ == node->right_link_ for some node v, then node->right_link_ will be reached from v
         Node* right = node->Next(level);
         bool go_right = right != nullptr && right->Height() <= level + 1;
@@ -184,7 +184,7 @@ class SkipList {
 
     auto GetLayer(size_t level) -> Seq<Node*> {
         //return GetLayerWithLinearSpan(level);
-        util::Assert(level < Height());
+        assert(level < Height());
         size_t total = CountDescendantsAtLevel(level);
         Seq<Node*> layer(total);
         CopyLayer(level, layer);
@@ -201,11 +201,17 @@ class SkipList {
     }
 
     auto Merge(Seq<Node*>& nodes, size_t height) -> void {
+        //std::cout << "!1" << std::endl;
         CoerceHeightAtLeast(height);
-        size_t crit_level = 0; //Height() - height;
+        //std::cout << "!2" << std::endl;
+        size_t crit_level = Height() - height;
+        //std::cout << "!3" << std::endl;
         auto crit_layer = GetLayer(crit_level);
+        //std::cout << "!4" << std::endl;
         MergeHigherLevels(crit_layer, nodes, crit_level);
+        //std::cout << "!5" << std::endl;
         MergeLowerLevels(crit_layer, nodes, crit_level);
+        //std::cout << "!6" << std::endl;
     }
 
     auto MergeHigherLevels(Seq<Node*> left, Seq<Node*> right, size_t crit_level) -> void {
@@ -232,11 +238,13 @@ class SkipList {
 
     auto PrepareInsert(Node* node, size_t level, Node* new_node) -> void {
         while (true) {
-            if (node->key > new_node->prev_key[level]) {
-                new_node->new_prev[level] = node;
-            }
-            if (new_node->Next(level) == nullptr || new_node->Next(level)->key > node->Next(level)->key) {
-                new_node->new_next[level] = node->Next(level);
+            if (new_node->Height() > level) {
+                if (node->key >= new_node->prev_key[level]) {
+                    new_node->new_prev[level] = node;
+                }
+                if (new_node->Next(level) == nullptr || new_node->Next(level)->key > node->Next(level)->key) {
+                    new_node->new_next[level] = node->Next(level);
+                }
             }
             if (level == 0) break;
             --level;
@@ -245,8 +253,11 @@ class SkipList {
     }
 
     auto MergeLowerLevels(Seq<Node*>& crit_layer, Seq<Node*>& nodes, size_t crit_level) -> void {
+        //std::cout << "!7" << std::endl;
         auto starting_nodes = FindStartingNodesInCritLayer(crit_layer, nodes);
+        //std::cout << "!8" << std::endl;
         parlay::parallel_for(0, nodes.size(), [&](size_t i) { PrepareInsert(starting_nodes[i], crit_level, nodes[i]); });
+        //std::cout << "!9" << std::endl;
         parlay::parallel_for(0, nodes.size(), [&](size_t i) {
             auto node = nodes[i];
             parlay::parallel_for(0, node->Height(), [&](size_t level) {
@@ -270,7 +281,7 @@ class SkipList {
     }
 
     static auto FillLinks(Seq<Node*> nodes, size_t level) -> void {
-        util::Assert(!nodes.empty());
+        assert(!nodes.empty());
         parlay::parallel_for(0, nodes.size() - 1, [&](size_t i) {
             nodes[i]->next[level] = nodes[i + 1];
             nodes[i + 1]->prev_key[level] = nodes[i]->key;

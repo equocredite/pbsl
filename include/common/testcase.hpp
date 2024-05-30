@@ -4,6 +4,8 @@
 #include <parlay/sequence.h>
 #include <parlay/primitives.h>
 
+#include <random>
+
 #include "config.hpp"
 #include "util.hpp"
 #include "timer.hpp"
@@ -31,12 +33,17 @@ struct TestGroup {
 };
 
 auto GenerateTest(TestDescription desc) -> Test {
+    //std::cout << "before keys\n";
     auto keys = parlay::tabulate(desc.initial_size + desc.batch_size, [](size_t i) { return i + 1; });
-    std::random_shuffle(keys.begin(), keys.end());
+    //std::cout << "before shuffle\n";
+    keys = parlay::random_shuffle(keys);
+    //std::cout << "after shuffle\n";
+    //std::shuffle(keys.begin(), keys.end(), std::mt19937(std::random_device()()));
     auto initial = keys.substr(0, desc.initial_size);
-    auto batch = keys.substr(desc.initial_size, desc.initial_size + desc.batch_size);
-    std::sort(initial.begin(), initial.end());
-    std::sort(batch.begin(), batch.end());
+    auto batch = keys.substr(desc.initial_size, desc.batch_size);
+    //std::cout << "before sort\n";
+    parlay::sort_inplace(initial);
+    parlay::sort_inplace(batch);
     return Test(std::move(initial), std::move(batch));
 }
 
