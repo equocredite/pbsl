@@ -41,6 +41,7 @@
 # *.ipr
 
 # CMake
+CMakeLists.txt # different configs on personal and corporate laptop
 cmake-build-*/
 
 # Mongo Explorer plugin
